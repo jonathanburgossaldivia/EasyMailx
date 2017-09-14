@@ -2,6 +2,7 @@ main=/etc/postfix/main.cf
 sasl=/etc/postfix/sasl_passwd
 
 sudo echo -n || exit 2
+sudo touch /etc/postfix/sasl_passwd
 
 read -p "Correo de Gmail : $(tput setaf 2)" -e correo
 echo -n "$(tput sgr0)"
@@ -100,7 +101,7 @@ fi
 
 if sudo grep -qx "smtp.*" $sasl ; then
 sudo cat $sasl | sudo perl -pi -e "s/smtp.*//g" $sasl && echo "smtp.gmail.com:587 $correo:$password" | sudo tee -a $sasl >/dev/null
-sudo sed '/^$/d' /etc/postfix/sasl_passwd >/dev/null
+sudo cat /etc/postfix/sasl_passwd | uniq | sed '/^$/d' > /tmp/sasl_passwd && sudo mv /tmp/sasl_passwd /etc/postfix/sasl_passwd
 else
 	echo "smtp.gmail.com:587 $correo:$password" | sudo tee -a $sasl >/dev/null
 	sudo sed '/^$/d' /etc/postfix/sasl_passwd >/dev/null
@@ -108,7 +109,8 @@ else
 fi
 
 ##Cargando configuraciones
-
+sudo chown root:wheel /etc/postfix/sasl_passwd*
+sudo chmod 600 /etc/postfix/sasl_passwd*
 sudo postmap /etc/postfix/sasl_passwd >/dev/null
 echo
 sudo postfix start 2>/dev/null
